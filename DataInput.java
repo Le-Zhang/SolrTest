@@ -26,11 +26,30 @@ public class DataInput {
 	Document dom;
 	List<SolrBean> myDocBeans;
 	InputStream is;
+	String docNo;
+	String docType;
+	String string_date_time;
+	Date date_time;
+	String header;
+	String slug;
+	String headLine;
+	String text;
+	String trailer;
 	
 	public DataInput(InputStream is) {
 		this.is = is;
 		dom = null;
 		myDocBeans = new ArrayList<SolrBean>();
+		
+		this.docNo = null;
+		this.docType = null;
+		this.string_date_time = null;
+		this.date_time = null;
+		this.header = null;
+		this.slug = null;
+		this.headLine = null;
+		this.text = null;
+		this.trailer = null;
 	}
 	
 	public void parseXMLFile() {
@@ -56,26 +75,7 @@ public class DataInput {
 		
 	}
 		
-		public void parseDocument() throws ParseException {
-			//get the root element
-			Element docEle = (Element) dom.getDocumentElement();
-			
-			//get a nodelist of elements
-			NodeList nl = docEle.getElementsByTagName("DOC");
-			//int count = nl.getLength();
-			if(nl != null && nl.getLength() > 0) {
-					for(int i = 0; i<nl.getLength(); i++) {
-						//get the document element
-						Element el = (Element)nl.item(i);
-						
-						//get the Doc object
-						SolrBean d = getDocBean(el);
-						
-						//add it to list
-						myDocBeans.add(d);
-					}
-			}
-		}
+		
 		
 		
 		/**
@@ -86,22 +86,41 @@ public class DataInput {
 		 * @throws ParseException 
 		 */
 		
-		private SolrBean getDocBean(Element doc) throws ParseException {
+		public SolrBean getDocBean() throws ParseException {
 			//for each <DOC> element get text or data value of header, docno, doc type, date_time
 			//slug, headline, text and trailer
 			
-			String docNo = getTextValue(doc, "DOCNO");
-			String docType = getTextValue(doc, "DOCTYPE");
+			//for(int i=0; i<dom.getElementsByTagName("DOCNO").getLength(); i++) {
 			
-			String string_date_time = getTextValue(doc, "DATE_TIME");
-			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-mm-dd hh:mm");
-			Date date_time = sdf.parse(string_date_time);
+//			String docNo;
+//			String docType;
+//			String string_date_time = null;
+//			Date date_time;
+//			String header;
+//			String slug;
+//			String headLine;
+//			String text;
+//			String trailer;
 			
-			String header = getTextValue(doc,"HEADER");
-			String slug = getTextValue(doc, "SLUG");
-			String headLine = getTextValue(doc, "HEADLINE");
-			String text = getTextValue(doc, "TEXT");
-			String trailer = getTextValue(doc, "TRAILER");
+			if(dom.getElementsByTagName("DOCNO").item(0).getFirstChild() != null)
+				docNo = dom.getElementsByTagName("DOCNO").item(0).getFirstChild().getNodeValue();
+			if(dom.getElementsByTagName("DOCTYPE").item(0).getFirstChild() != null)
+				docType = dom.getElementsByTagName("DOCTYPE").item(0).getFirstChild().getNodeValue();
+			if(dom.getElementsByTagName("DATE_TIME").item(0).getFirstChild() != null)
+				string_date_time = dom.getElementsByTagName("DATE_TIME").item(0).getFirstChild().getNodeValue();
+				SimpleDateFormat sdf = new SimpleDateFormat("yyyy-mm-dd hh:mm");
+				date_time = sdf.parse(string_date_time);
+			if(dom.getElementsByTagName("HEADER").item(0).getFirstChild() != null)
+				header = dom.getElementsByTagName("HEADER").item(0).getFirstChild().getNodeValue();
+			if(dom.getElementsByTagName("SLUG").item(0) != null)
+				slug = dom.getElementsByTagName("SLUG").item(0).getFirstChild().getNodeValue();
+			if(dom.getElementsByTagName("HEADLINE").item(0) != null
+					&& dom.getElementsByTagName("HEADLINE").item(0).getFirstChild() != null)
+				headLine = dom.getElementsByTagName("HEADLINE").item(0).getFirstChild().getNodeValue();
+			if(dom.getElementsByTagName("TEXT").item(0).getFirstChild() != null)
+				text = dom.getElementsByTagName("TEXT").item(0).getFirstChild().getNodeValue();
+			if(dom.getElementsByTagName("TRAILER").item(0).getFirstChild() != null)
+				trailer = dom.getElementsByTagName("TRAILER").item(0).getFirstChild().getNodeValue();
 			
 			SolrBean sb = new SolrBean();
 			sb.setDocNO(docNo);
@@ -113,20 +132,13 @@ public class DataInput {
 			sb.setContent(text);
 			sb.setTrailer(trailer);
 			
-			return sb;
+			//myDocBeans.add(sb);
+			//}
 			
+			return sb;
 		}
 		
-		private String getTextValue(Element ele, String tagName) {
-			String textVal = null;
-			NodeList nl = ele.getElementsByTagName(tagName);
-			if(nl !=null && nl.getLength() > 0) {
-				Element el = (Element)nl.item(0);
-				textVal = el.getFirstChild().getNodeValue();
-			}
-			
-			return textVal;
-		}
+
 		
 		public List<SolrBean> getBeanList() {
 			return myDocBeans;
