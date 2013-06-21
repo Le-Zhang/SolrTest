@@ -28,13 +28,13 @@ public class FormQuery {
 			System.out.println(qrel);
 			SolrQuery params = new SolrQuery();
 			
-			params.setFields("docno","score");
-			params.set("defType", "dismax");
+			params.setFields("DOCNO","score");
+			params.set("defType", "edismax");
 			params.set("q", qrel);
-			//params.set("qf", "body^10 text^10");
+			params.set("qf", "HEADLINE^5 TEXT^10 SLUG^1");
 			params.set("sort", "score desc");
 			
-			params.setRows(100);
+			params.setRows(10000);
 		
 			QueryResponse response = solrServer.query(params);
 			if(response == null) 
@@ -53,9 +53,10 @@ public class FormQuery {
 		PrintWriter writer = new PrintWriter(results);
 		for(String id : qrelSet){
 			SolrDocumentList docList = solrQuery(id, qrelMap);
-			//System.out.println(docList);
+			System.out.println(docList);
 			for(int i = 0; i < docList.size(); i ++){
-				String docno = (String)docList.get(i).getFieldValue("docno");
+				String docno = (String)docList.get(i).getFieldValue("DOCNO");
+				System.out.println(docno);
 				Float score = (Float)docList.get(i).getFieldValue("score");
 				writer.printf("%s\t%s\t%s\t%d\t%f\t%s\n", id, "Q0", docno, i, score, "STANDARD" );
 			}

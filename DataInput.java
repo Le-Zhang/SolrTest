@@ -29,6 +29,7 @@ import org.apache.solr.client.solrj.SolrServer;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
@@ -38,42 +39,10 @@ public class DataInput {
 	
 	private SolrServer solrServer;
 	private String dataPath;
-	
-	//private Document dom;
-	private List<SolrBean> myDocBeans;
-//	private String docNo;
-//	private String docType;
-//	private String string_date_time;
-//	private Date date_time;
-//	private String header;
-//	private String slug;
-//	private String headLine;
-//	private String text;
-//	private String trailer;
-	
-	private String num;
-	private String title;
-	private String desc;
-	private String narr;
+
+
 	
 	private DateFormat format;
-	
-	public DataInput() {
-		myDocBeans = new ArrayList<SolrBean>();
-		
-//		this.docNo = null;
-//		this.docType = null;
-//		this.string_date_time = null;
-//		this.date_time = null;
-//		this.header = null;
-//		this.slug = null;
-//		this.headLine = null;
-//		this.text = null;
-//		this.trailer = null;
-//		this.num = null;
-//		this.title = null;
-
-	}
 	
 	public DataInput(SolrServer solrServer, String dataPath) {
 		this.solrServer = solrServer;
@@ -96,7 +65,7 @@ public class DataInput {
 		
 		if(folder.isDirectory()) {
 			File[] fileList = folder.listFiles();
-			//System.out.println(fileList.length);
+			System.out.println(fileList.length);
 			for(int i=0; i< fileList.length; i++) {
 				if(!fileList[i].isHidden()){
 					//format = getDateFormat(fileList[i].getName());
@@ -137,8 +106,6 @@ public class DataInput {
 		for(String doc:docList){
 			
 			ByteArrayInputStream inputstream = new ByteArrayInputStream(doc.getBytes());
-			//DataInput di = new DataInput(inputstream);
-			//parseXMLFile(inputstream);
 			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 			DocumentBuilder db = dbf.newDocumentBuilder();
 			
@@ -152,22 +119,14 @@ public class DataInput {
 		return sbs;
 	}
 	
-//	public void parseXMLFile(InputStream is) throws ParserConfigurationException, SAXException,IOException {
-//		
-//		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-//		DocumentBuilder db = dbf.newDocumentBuilder();
-//		if(is!=null){
-//			dom = db.parse(is);
-//				} 
-//		
-//	}
-	
-	public DateFormat getDateFormat(String source){
-		if(source.contains("APW"))
-			setDateFormat("yyyy-MM-dd hh:mm:ss");
-		else if(source.contains("NYT"))
+	public DateFormat getDateFormat(String date){
+		if(date.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}[ \t].*[0-9]{2}:[0-9]{2}"))
 			setDateFormat("yyyy-MM-dd hh:mm");
-		else if(source.contains("XIE"))
+		else if(date.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}[ \t].*[0-9]{2}:[0-9]{2}:[0-9]{2}"))
+			setDateFormat("yyyy-MM-dd hh:mm:ss");
+		else if(date.matches("[0-9]{2}\\/[0-9]{2}\\/[0-9]{4}[ \t].*[0-9]{2}:[0-9]{2}"))
+			setDateFormat("MM/dd/yyyy hh:mm");
+		else if(date.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}"))
 			setDateFormat("yyyy-MM-dd");
 
 		return format;
@@ -188,11 +147,6 @@ public class DataInput {
 		 */
 		
 		public SolrBean getDocBean(Document dom) throws ParseException {
-			//for each <DOC> element get text or data value of header, docno, doc type, date_time
-			//slug, headline, text and trailer
-			
-			//for(int i=0; i<dom.getElementsByTagName("DOCNO").getLength(); i++) {
-			
 
 			String string_date_time;
 			Date date_time;
@@ -215,12 +169,15 @@ public class DataInput {
 //				docType = "";
 //			}
 //			System.out.println(dom.getElementsByTagName("DATE_TIME").getLength());
-			if(dom.getElementsByTagName("DATE_TIME").item(0).getFirstChild() != null){
+			if(dom.getElementsByTagName("DATE_TIME").getLength() !=0 &&dom.getElementsByTagName("DATE_TIME").item(0).getFirstChild() != null){
 				string_date_time = dom.getElementsByTagName("DATE_TIME").item(0).getFirstChild().getNodeValue();
-				//SimpleDateFormat sdf = new SimpleDateFormat("yyyy-mm-dd hh:mm");
-				format = getDateFormat(sb.getDocNO());
-				date_time = format.parse(string_date_time);
-				sb.setDate_time(date_time);
+				if(string_date_time.equals(" no timestamp ")) {
+					sb.setDate_time(new Date());
+				} else {
+					format = getDateFormat(string_date_time.trim());
+					date_time = format.parse(string_date_time);
+					sb.setDate_time(date_time);
+				}
 			}
 			
 			if(dom.getElementsByTagName("HEADER").getLength() == 0 ||dom.getElementsByTagName("HEADER").item(0) == null){
@@ -247,14 +204,9 @@ public class DataInput {
 			if(dom.getElementsByTagName("TEXT").getLength() == 0||dom.getElementsByTagName("TEXT").item(0).getFirstChild() == null) {
 				sb.setContent("");
 			} else {
-				sb.setContent(dom.getElementsByTagName("TEXT").item(0).getFirstChild().getNodeValue());
+				sb.setContent(dom.getElementsByTagName("TEXT").item(0).getTextContent());
 			}
 			
-//			if(dom.getElementsByTagName("TRAILER").getLength() == 0) {
-//				sb.setTrailer("");
-//			} else {
-//				sb.setTrailer(dom.getElementsByTagName("TRAILER").item(0).getFirstChild().getNodeValue());
-//			}
 			if(dom.getElementsByTagName("TRAILER").getLength() != 0 && dom.getElementsByTagName("TRAILER").item(0).getFirstChild() != null){
 				sb.setTrailer(dom.getElementsByTagName("TRAILER").item(0).getFirstChild().getNodeValue());
 			} else {
@@ -263,13 +215,6 @@ public class DataInput {
 			
 			return sb;
 		}
-		
-
-		
-		public List<SolrBean> getBeanList() {
-			return myDocBeans;
-		}
-
 		
 		/**
 		 * Create a Topic object and set field of topic
@@ -281,52 +226,19 @@ public class DataInput {
 		 * @throws XMLStreamException
 		 */
 		public Topic parseTopic(Document dom) throws ParserConfigurationException, SAXException, IOException, XMLStreamException {
+			Topic topic = new Topic();
 			
 			if(dom.getElementsByTagName("num").item(0).getFirstChild() != null){
 				String[] nums = dom.getElementsByTagName("num").item(0).getFirstChild().getNodeValue().split(": ");
-				num = nums[1];
+				topic.setDocnum(nums[1]);
 			}
 			if(dom.getElementsByTagName("title").item(0).getFirstChild() != null)
-				title = dom.getElementsByTagName("title").item(0).getFirstChild().getNodeValue();
+				topic.setTitle(dom.getElementsByTagName("title").item(0).getFirstChild().getNodeValue());
 			if(dom.getElementsByTagName("desc").item(0).getFirstChild() != null)
-				desc = dom.getElementsByTagName("desc").item(0).getFirstChild().getNodeValue();
+				topic.setDesc(dom.getElementsByTagName("desc").item(0).getFirstChild().getNodeValue());
 			if(dom.getElementsByTagName("narr").item(0).getFirstChild() != null)
-				narr = dom.getElementsByTagName("narr").item(0).getFirstChild().getNodeValue();
-			
-			Topic topic = new Topic();
-			topic.setDocnum(num);
-			topic.setTitle(title);
-			topic.setDesc(desc);
-			topic.setNarr(narr);
-			
-//			XMLInputFactory xif = XMLInputFactory.newInstance();
-//			XMLEventReader xer = xif.createXMLEventReader(is);
-//			Topic topic = new Topic();
-//
-//			while(xer.hasNext()){
-//				XMLEvent event = xer.nextEvent();
-//				if(event.isStartElement()){
-//					StartElement se = event.asStartElement();
-//					if(se.getName().getLocalPart().equals("num")){
-//						event = xer.nextEvent();
-//						topic.setDocnum(event.asCharacters().getData());
-//					}
-//					else if(se.getName().getLocalPart().equals("title")){
-//						event = xer.nextEvent();
-//						topic.setTitle(event.asCharacters().getData());
-//					}
-//					else if(se.getName().getLocalPart().equals("descr")){
-//						event = xer.nextEvent();
-//						topic.setDesc(event.asCharacters().getData());
-//					}
-//					else if(se.getName().getLocalPart().equals("narr")){
-//						event = xer.nextEvent();
-//						topic.setNarr(event.asCharacters().getData());
-//					}
-//				}
-//			}
+				topic.setNarr(dom.getElementsByTagName("narr").item(0).getFirstChild().getNodeValue());
 
-			
 			return topic;
 			
 		}

@@ -25,14 +25,14 @@ public class QueryTester {
 	 */
 	public static void main(String[] args) throws SolrServerException, IOException, ParserConfigurationException, SAXException, XMLStreamException {
 		SolrServer solrServer = new HttpSolrServer("http://localhost:9090");
-		FormQuery query = new FormQuery(solrServer,"/Users/zhangle/Documents/OpenRelavance/trec/results.txt");
+		FormQuery query = new FormQuery(solrServer,"/Users/zhangle/Documents/OpenRelevance/trec/results.txt");
 		
-		DataInput dinput = new DataInput(solrServer, "/Users/zhangle/Documents/OpenRelavance/trec/topics.txt");
+		DataInput dinput = new DataInput(solrServer, "/Users/zhangle/Documents/OpenRelevance/trec/topics.txt");
 		HashMap<String, Topic> qrelMap = dinput.getQrels();
-		System.out.println(qrelMap.keySet());
-		System.out.println(qrelMap.get("436"));
-		HashSet<String> qrelSet = dinput.getQrelNum("/Users/zhangle/Documents/OpenRelavance/trec/qrels.txt");
-		System.out.println(qrelSet);
+		//System.out.println(qrelMap.keySet());
+		//System.out.println(qrelMap.get("436"));
+		HashSet<String> qrelSet = dinput.getQrelNum("/Users/zhangle/Documents/OpenRelevance/trec/qrels.txt");
+		//System.out.println(qrelSet);
 		
 		query.writeResults(qrelSet, qrelMap);
 		
